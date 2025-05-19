@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight Tracker</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6e8efb, #a777e3);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            margin: 20px auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            text-align: center;
+            color: #4a4a8c;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+        }
+
+        .weight-form {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .weight-form input {
+            padding: 12px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s, transform 0.2s;
+            width: 200px;
+        }
+
+        .weight-form input:focus {
+            border-color: #6e8efb;
+            transform: scale(1.02);
+        }
+
+        .weight-form button {
+            padding: 12px 25px;
+            background: #6e8efb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1.1em;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .weight-form button:hover {
+            background: #5a7be3;
+            transform: translateY(-2px);
+        }
+
+        .progress-section {
+            margin: 30px 0;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 80%;
+            height: 20px;
+            background: #eee;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px auto;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6e8efb, #a777e3);
+            width: 0;
+            transition: width 1s ease-in-out;
+        }
+
+        .history-section {
+            margin-top: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: center;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #6e8efb;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .delete-btn {
+            color: #e74c3c;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .delete-btn:hover {
+            color: #c0392b;
+        }
+
+        .motivation {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 1.2em;
+            color: #4a4a8c;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .icon {
+            margin-right: 10px;
+            color: #6e8efb;
+        }
+
+        @media (max-width: 600px) {
+            .weight-form input {
+                width: 100%;
+                max-width: 300px;
+            }
+            .weight-form {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .progress-bar {
+                width: 100%;
+            }
+            th, td {
+                font-size: 0.9em;
+                padding: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-weight-scale icon"></i>Weight Tracker</h1>
+        
+        <div class="weight-form">
+            <input type="number" id="weightInput" placeholder="Enter weight (kg)" step="0.1" min="0">
+            <input type="date" id="dateInput" value="">
+            <button onclick="addWeight()"><i class="fas fa-plus icon"></i>Add Weight</button>
+        </div>
+
+        <div class="progress-section">
+            <h2><i class="fas fa-chart-line icon"></i>Progress</h2>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Start tracking your weight to see progress!</p>
+        </div>
+
+        <div class="history-section">
+            <h2><i class="fas fa-history icon"></i>Weight History</h2>
+            <table id="weightTable">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Weight (kg)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="weightTableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="motivation">
+            <i class="fas fa-heart icon"></i>Keep going! Every step counts towards a healthier you!
+        </div>
+    </div>
+
+    <script>
+        let weights = JSON.parse(localStorage.getItem('weights')) || [];
+        const goalWeight = 70; // Example goal weight in kg
+        const startWeight = 100; // Example start weight in kg
+
+        function addWeight() {
+            const weight = parseFloat(document.getElementById('weightInput').value);
+            const date = document.getElementById('dateInput').value;
+            
+            if (!weight || !date) {
+                alert('Please enter both weight and date.');
+                return;
+            }
+
+            weights.push({ weight, date });
+            weights.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date descending
+            localStorage.setItem('weights', JSON.stringify(weights));
+            updateTable();
+            updateProgress();
+            document.getElementById('weightInput').value = '';
+            document.getElementById('dateInput').value = '';
+        }
+
+        function deleteWeight(index) {
+            weights.splice(index, 1);
+            localStorage.setItem('weights', JSON.stringify(weights));
+            updateTable();
+            updateProgress();
+        }
+
+        function updateTable() {
+            const tbody = document.getElementById('weightTableBody');
+            tbody.innerHTML = '';
+            weights.forEach((entry, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${entry.date}</td>
+                    <td>${entry.weight.toFixed(1)}</td>
+                    <td><i class="fas fa-trash delete-btn" onclick="deleteWeight(${index})"></i></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        function updateProgress() {
+            if (weights.length === 0) {
+                document.getElementById('progressFill').style.width = '0%';
+                document.getElementById('progressText').textContent = 'Start tracking your weight to see progress!';
+                return;
+            }
+
+            const latestWeight = weights[0].weight;
+            const progress = ((startWeight - latestWeight) / (startWeight - goalWeight)) * 100;
+            const cappedProgress = Math.min(Math.max(progress, 0), 100);
+            
+            document.getElementById('progressFill').style.width = `${cappedProgress}%`;
+            document.getElementById('progressText').textContent = 
+                `Current: ${latestWeight.toFixed(1)} kg | Goal: ${goalWeight} kg | Progress: ${cappedProgress.toFixed(1)}%`;
+        }
+
+        // Set today's date as default
+        document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+
+        // Initial render
+        updateTable();
+        updateProgress();
+    </script>
+</body>
+</html>

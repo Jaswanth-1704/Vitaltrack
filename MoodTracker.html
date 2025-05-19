@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Enhanced Mood Tracker</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.2.1/css/all.min.css"
+    />
+    <style>
+      .mood-card {
+        transition: all 0.3s ease;
+        cursor: pointer;
+        border: 2px solid transparent;
+      }
+      .mood-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      }
+      .mood-card.selected {
+        border-color: #3b82f6;
+        background-color: rgba(59, 130, 246, 0.1);
+      }
+      .emoji {
+        font-size: 2.5rem;
+        transition: transform 0.3s ease;
+      }
+      .mood-card:hover .emoji {
+        transform: scale(1.2);
+      }
+      .save-btn {
+        transition: all 0.3s ease;
+      }
+      .save-btn:hover {
+        transform: scale(1.05);
+      }
+      .history-item {
+        transition: all 0.3s ease;
+      }
+      .history-item:hover {
+        transform: translateX(5px);
+        background-color: rgba(243, 244, 246, 0.8);
+      }
+      .tab-content {
+        display: none;
+      }
+      .tab-content.active {
+        display: block;
+        animation: fadeIn 0.5s ease;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      .mood-badge {
+        transition: all 0.3s ease;
+      }
+      .very-happy {
+        background-color: #fef3c7;
+      }
+      .happy {
+        background-color: #dbeafe;
+      }
+      .neutral {
+        background-color: #e5e7eb;
+      }
+      .sad {
+        background-color: #e0e7ff;
+      }
+      .anxious {
+        background-color: #fee2e2;
+      }
+      .stressed {
+        background-color: #fde68a;
+      }
+      .energetic {
+        background-color: #bfdbfe;
+      }
+      .tired {
+        background-color: #d1d5db;
+      }
+      .chart-container {
+        height: 300px;
+        position: relative;
+      }
+
+      /* Dark mode */
+      .dark-mode {
+        background-color: #1f2937;
+        color: #f3f4f6;
+      }
+      .dark-mode .bg-white {
+        background-color: #374151 !important;
+      }
+      .dark-mode .bg-gray-50 {
+        background-color: #1f2937 !important;
+      }
+      .dark-mode .text-gray-700 {
+        color: #e5e7eb !important;
+      }
+      .dark-mode .text-gray-500 {
+        color: #9ca3af !important;
+      }
+      .dark-mode .border-gray-200 {
+        border-color: #4b5563 !important;
+      }
+      .dark-mode .history-item:hover {
+        background-color: rgba(55, 65, 81, 0.8);
+      }
+
+      /* Animations */
+      .pulse {
+        animation: pulse 2s infinite;
+      }
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .streak-counter {
+        background: linear-gradient(135deg, #3b82f6, #ec4899);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 9999px;
+        font-weight: bold;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        animation: glow 2s infinite alternate;
+      }
+      @keyframes glow {
+        from {
+          box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+        }
+        to {
+          box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+        }
+      }
+
+      /* Confetti animation */
+      .confetti-container {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+        pointer-events: none;
+        z-index: 999;
+      }
+      .confetti {
+        position: absolute;
+        width: 10px;
+        height: 10px;
+        opacity: 0;
+      }
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen">
+    <div class="confetti-container" id="confetti-container"></div>
+    <div class="container mx-auto px-4 py-6">
+      <div class="flex justify-between items-center mb-6">
+        <h1 class="text-3xl font-bold text-gray-800 flex items-center">
+          <i class="fas fa-chart-line text-blue-500 mr-3"></i>
+          <span class="animate__animated animate__fadeIn">Mood Tracker</span>
+        </h1>
+        <div class="flex space-x-2">
+          <button
+            id="settings-btn"
+            class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition"
+            title="Settings"
+          >
+            <i class="fas fa-cog"></i>
+          </button>
+          <button
+            id="calendar-btn"
+            class="p-2 rounded-full bg-gray-200 hover:bg-gray-300 transition"
+            title="Calendar"
+          >
+            <i class="fas fa-calendar-alt"></i>
+          </button>
+        </div>
+      </div>
+      <div class="text-sm text-gray-600 mb-4 animate__animated animate__fadeIn">
+        Track your daily emotional wellbeing and discover patterns in your mood
+      </div>
+      <div class="flex justify-between items-center mb-4">
+        <div class="streak-counter">
+          <i class="fas fa-fire-alt mr-2"></i>
+          <span id="streak-count">0</span> Day Streak
+        </div>
+        <div class="text-gray-700 font-medium">
+          <i class="far fa-calendar-alt mr-1"></i>
+          <span id="current-date"></span>
+        </div>
+      </div>
+      <div
+        class="bg-white rounded-lg shadow-md p-6 mb-6 animate__animated animate__fadeIn"
+      >
+        <h2 class="text-xl font-semibold mb-4 text-gray-800">
+          How are you feeling today?
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2 mb-6">
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="veryHappy"
+            data-value="5"
+          >
+            <div class="emoji">😁</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Very Happy</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="happy"
+            data-value="4"
+          >
+            <div class="emoji">😊</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Happy</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="neutral"
+            data-value="3"
+          >
+            <div class="emoji">😐</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Neutral</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="sad"
+            data-value="2"
+          >
+            <div class="emoji">😔</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Sad</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="anxious"
+            data-value="1"
+          >
+            <div class="emoji">😨</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Anxious</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="stressed"
+            data-value="1.5"
+          >
+            <div class="emoji">😫</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Stressed</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="energetic"
+            data-value="4.5"
+          >
+            <div class="emoji">⚡</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Energetic</div>
+          </div>
+          <div
+            class="mood-card rounded-lg p-3 flex flex-col items-center"
+            data-mood="tired"
+            data-value="2.5"
+          >
+            <div class="emoji">😴</div>
+            <div class="text-sm font-medium mt-2 text-gray-700">Tired</div>
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-medium mb-2"
+            >Add a note (optional)</label
+          >
+          <textarea
+            id="mood-note"
+            class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+            placeholder="What's contributing to your mood today?"
+            rows="3"
+          ></textarea>
+        </div>
+        <div class="mb-4">
+          <label class="block text-gray-700 font-medium mb-2"
+            >Factors (optional)</label
+          >
+          <div class="flex flex-wrap gap-2">
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Work
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Sleep
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Exercise
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Diet
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Social
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Weather
+            </button>
+            <button
+              class="factor-tag px-3 py-1 rounded-full bg-gray-200 hover:bg-gray-300 text-sm transition"
+            >
+              Health
+            </button>
+            <button
+              id="add-factor"
+              class="px-3 py-1 rounded-full bg-blue-100 text-blue-700 hover:bg-blue-200 text-sm transition"
+            >
+              + Add
+            </button>
+          </div>
+        </div>
+        <button
+          id="save-mood"
+          class="save-btn w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition flex items-center justify-center"
+        >
+          <i class="fas fa-save mr-2"></i> Save Mood
+        </button>
+      </div>
+      <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+        <div class="border-b border-gray-200">
+          <nav class="flex -mb-px">
+            <button
+              class="tab-btn text-blue-500 border-blue-500 flex-1 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+              data-tab="history"
+            >
+              History
+            </button>
+            <button
+              class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-1 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm"
+              data-tab="insights"
+            >
+              Insights
+            </button>
+            <button
+              class="tab-btn text-gray-500 hover:text-gray-700 hover:border-gray-300 flex-1 whitespace-nowrap py-4 px-1 border-b-2 border-transparent font-medium text-sm"
+              data-tab="stats"
+            >
+              Stats
+            </button>
+          </nav>
+        </div>
+        <div id="history" class="tab-content active p-6">
+          <div id="mood-history" class="space-y-4"></div>
+        </div>
+        <div id="insights" class="tab-content p-6">
+          <div class="p-4 mb-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 class="font-bold text-blue-800 mb-2">
+              <i class="fas fa-brain mr-2"></i> Mood Insights
+            </h3>
+            <p class="text-blue-700" id="mood-insight">
+              Start tracking your moods to receive personalized insights!
+            </p>
+          </div>
+          <div class="p-4 mb-4 bg-green-50 border border-green-200 rounded-lg">
+            <h3 class="font-bold text-green-800 mb-2">
+              <i class="fas fa-sun mr-2"></i> Looking Ahead
+            </h3>
+            <p class="text-green-700" id="mood-recommendation">
+              We'll provide recommendations as you log more entries.
+            </p>
+          </div>
+          <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+            <h3 class="font-bold text-purple-800 mb-2">
+              <i class="fas fa-chart-line mr-2"></i> Pattern Detection
+            </h3>
+            <p class="text-purple-700" id="mood-patterns">
+              Patterns will appear as you continue logging your moods.
+            </p>
+          </div>
+        </div>
+        <div id="stats" class="tab-content p-6">
+          <div class="mb-6">
+            <h3 class="font-bold text-gray-700 mb-3">
+              <i class="fas fa-calendar-week mr-2"></i> Weekly Overview
+            </h3>
+            <div class="chart-container">
+              <canvas id="weeklyChart"></canvas>
+            </div>
+          </div>
+          <div class="mb-6">
+            <h3 class="font-bold text-gray-700 mb-3">
+              <i class="fas fa-chart-pie mr-2"></i> Mood Distribution
+            </h3>
+            <div class="chart-container">
+              <canvas id="moodDistribution"></canvas>
+            </div>
+            <div class="chart-container mt-8">
+              <h4 class="font-semibold text-gray-700 mb-2">
+                Mood by Time of Day
+              </h4>
+              <canvas id="moodByTimeBar"></canvas>
+            </div>
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div class="bg-blue-50 p-4 rounded-lg text-center">
+              <div class="font-bold text-2xl text-blue-500" id="avg-mood">
+                -
+              </div>
+              <div class="text-sm text-gray-600">Average Mood</div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg text-center">
+              <div class="font-bold text-2xl text-green-500" id="top-mood">
+                -
+              </div>
+              <div class="text-sm text-gray-600">Most Common</div>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg text-center">
+              <div
+                class="font-bold text-2xl text-purple-500"
+                id="total-entries"
+              >
+                0
+              </div>
+              <div class="text-sm text-gray-600">Total Entries</div>
+            </div>
+            <div class="bg-amber-50 p-4 rounded-lg text-center">
+              <div class="font-bold text-2xl text-amber-500" id="mood-trend">
+                -
+              </div>
+              <div class="text-sm text-gray-600">Current Trend</div>
+            </div>
+          </div>
+          <div class="bg-gray-50 p-4 rounded-lg">
+            <h3 class="font-bold text-gray-700 mb-2">
+              <i class="fas fa-tags mr-2"></i> Top Factors
+            </h3>
+            <div id="factor-stats" class="space-y-2">
+              <div class="text-gray-500 text-sm italic">
+                No factors recorded yet
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Settings Modal -->
+      <div
+        id="settings-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden"
+      >
+        <div
+          class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate__animated animate__fadeInDown"
+        >
+          <div
+            class="p-4 border-b border-gray-200 flex justify-between items-center"
+          >
+            <h3 class="text-lg font-bold text-gray-800">Settings</h3>
+            <button
+              id="close-settings"
+              class="text-gray-400 hover:text-gray-500"
+              title="Close Settings"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="p-4">
+            <div class="mb-4">
+              <label class="block text-gray-700 mb-2" for="reminder-time"
+                >Reminder Time</label
+              >
+              <input
+                type="time"
+                id="reminder-time"
+                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                value="20:00"
+                title="Set Reminder Time"
+                placeholder="Set Reminder Time"
+              />
+            </div>
+            <div class="mb-4">
+              <button
+                id="export-data"
+                class="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-2 px-4 rounded-lg transition"
+              >
+                <i class="fas fa-download mr-2"></i> Export Data
+              </button>
+            </div>
+            <div class="mb-4">
+              <button
+                id="clear-data"
+                class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition"
+              >
+                <i class="fas fa-trash mr-2"></i> Clear Data
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- Add Factor Modal -->
+      <div
+        id="factor-modal"
+        class="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center hidden"
+      >
+        <div
+          class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 animate__animated animate__fadeInDown"
+        >
+          <div
+            class="p-4 border-b border-gray-200 flex justify-between items-center"
+          >
+            <h3 class="text-lg font-bold text-gray-800">Add Custom Factor</h3>
+            <button
+              id="close-factor"
+              class="text-gray-400 hover:text-gray-500"
+              title="Close Add Factor"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+          <div class="p-4">
+            <div class="mb-4">
+              <label class="block text-gray-700 mb-2">Factor Name</label>
+              <input
+                type="text"
+                id="new-factor"
+                class="w-full p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition"
+                placeholder="Enter new factor..."
+              />
+            </div>
+            <button
+              id="save-factor"
+              class="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition"
+            >
+              <i class="fas fa-plus mr-2"></i> Add Factor
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        // --- State ---
+        let selectedMood = null;
+        let selectedFactors = [];
+        let moodData = JSON.parse(localStorage.getItem("moodData")) || [];
+        let customFactors =
+          JSON.parse(localStorage.getItem("customFactors")) || [];
+        let reminderTime = localStorage.getItem("reminderTime") || "20:00";
+        let streak = parseInt(localStorage.getItem("streak") || "0");
+
+        // --- Date/Calendar ---
+        const today = new Date();
+        document.getElementById("current-date").textContent =
+          today.toLocaleDateString("en-US", {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          });
+        document.getElementById("streak-count").textContent = streak;
+
+        // Calendar button functionality (show a simple date picker and filter history)
+        document
+          .getElementById("calendar-btn")
+          .addEventListener("click", function () {
+            const input = document.createElement("input");
+            input.type = "date";
+            input.style.position = "absolute";
+            input.style.left = "-9999px";
+            document.body.appendChild(input);
+            input.focus();
+            input.onchange = function () {
+              const dateStr = input.value;
+              if (dateStr) {
+                renderMoodHistory(dateStr);
+              }
+              document.body.removeChild(input);
+            };
+            input.click();
+          });
+
+        // --- Mood Card Selection ---
+        document.querySelectorAll(".mood-card").forEach((card) => {
+          card.addEventListener("click", function () {
+            document
+              .querySelectorAll(".mood-card")
+              .forEach((c) => c.classList.remove("selected"));
+            this.classList.add("selected");
+            selectedMood = this.getAttribute("data-mood");
+          });
+        });
+
+        // --- Factor Tag Selection ---
+        document.querySelectorAll(".factor-tag").forEach((tag) => {
+          tag.addEventListener("click", function () {
+            this.classList.toggle("bg-blue-200");
+            this.classList.toggle("text-blue-800");
+            const factor = this.textContent;
+            if (selectedFactors.includes(factor)) {
+              selectedFactors = selectedFactors.filter((f) => f !== factor);
+            } else {
+              selectedFactors.push(factor);
+            }
+          });
+        });
+
+        // --- Add Custom Factor ---
+        document
+          .getElementById("add-factor")
+          .addEventListener("click", function () {
+            document.getElementById("factor-modal").classList.remove("hidden");
+            document.getElementById("new-factor").focus();
+          });
+        document
+          .getElementById("close-factor")
+          .addEventListener("click", function () {
+            document.getElementById("factor-modal").classList.add("hidden");
+          });
+        document
+          .getElementById("save-factor")
+          .addEventListener("click", function () {
+            const newFactor = document
+              .getElementById("new-factor")
+              .value.trim();
+            if (newFactor && !customFactors.includes(newFactor)) {
+              customFactors.push(newFactor);
+              localStorage.setItem(
+                "customFactors",
+                JSON.stringify(customFactors)
+              );
+              renderCustomFactors();
+            }
+            document.getElementById("new-factor").value = "";
+            document.getElementById("factor-modal").classList.add("hidden");
+          });
+        function renderCustomFactors() {
+          const addFactorBtn = document.getElementById("add-factor");
+          document
+            .querySelectorAll(".custom-factor")
+            .forEach((el) => el.remove());
+          customFactors.forEach((factor) => {
+            const tagEl = document.createElement("button");
+            tagEl.classList.add(
+              "factor-tag",
+              "custom-factor",
+              "px-3",
+              "py-1",
+              "rounded-full",
+              "bg-gray-200",
+              "hover:bg-gray-300",
+              "text-sm",
+              "transition"
+            );
+            tagEl.textContent = factor;
+            tagEl.addEventListener("click", function () {
+              this.classList.toggle("bg-blue-200");
+              this.classList.toggle("text-blue-800");
+              if (selectedFactors.includes(factor)) {
+                selectedFactors = selectedFactors.filter((f) => f !== factor);
+              } else {
+                selectedFactors.push(factor);
+              }
+            });
+            addFactorBtn.parentNode.insertBefore(tagEl, addFactorBtn);
+          });
+        }
+        renderCustomFactors();
+
+        // --- Save Mood ---
+        document
+          .getElementById("save-mood")
+          .addEventListener("click", function () {
+            if (!selectedMood) {
+              alert("Please select a mood before saving.");
+              return;
+            }
+            const note = document.getElementById("mood-note").value;
+            const now = new Date();
+            const moodEntry = {
+              mood: selectedMood,
+              note: note,
+              factors: selectedFactors,
+              date: now.toISOString(),
+            };
+            moodData.push(moodEntry);
+            localStorage.setItem("moodData", JSON.stringify(moodData));
+            // Streak logic
+            const today = new Date().setHours(0, 0, 0, 0);
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            const lastEntryDate =
+              moodData.length > 1
+                ? new Date(moodData[moodData.length - 2].date)
+                : null;
+            if (lastEntryDate) {
+              const lastEntryDay = new Date(lastEntryDate).setHours(0, 0, 0, 0);
+              if (lastEntryDay === yesterday.getTime()) {
+                streak++;
+              } else if (lastEntryDay < yesterday.getTime()) {
+                streak = 1;
+              }
+            } else {
+              streak = 1;
+            }
+            localStorage.setItem("streak", streak);
+            document.getElementById("streak-count").textContent = streak;
+            // Reset form
+            selectedMood = null;
+            selectedFactors = [];
+            document
+              .querySelectorAll(".mood-card")
+              .forEach((card) => card.classList.remove("selected"));
+            document
+              .querySelectorAll(".factor-tag")
+              .forEach((tag) =>
+                tag.classList.remove("bg-blue-200", "text-blue-800")
+              );
+            document.getElementById("mood-note").value = "";
+            // Update history and stats
+            renderMoodHistory();
+          });
+
+        // --- Settings Modal ---
+        document
+          .getElementById("settings-btn")
+          .addEventListener("click", function () {
+            document
+              .getElementById("settings-modal")
+              .classList.remove("hidden");
+          });
+        document
+          .getElementById("close-settings")
+          .addEventListener("click", function () {
+            document.getElementById("settings-modal").classList.add("hidden");
+          });
+        document
+          .getElementById("export-data")
+          .addEventListener("click", function () {
+            const dataStr = JSON.stringify(moodData, null, 2);
+            const dataUri =
+              "data:application/json;charset=utf-8," +
+              encodeURIComponent(dataStr);
+            const exportFileDefaultName = "mood_tracker_data.json";
+            const linkElement = document.createElement("a");
+            linkElement.setAttribute("href", dataUri);
+            linkElement.setAttribute("download", exportFileDefaultName);
+            linkElement.click();
+          });
+        document
+          .getElementById("clear-data")
+          .addEventListener("click", function () {
+            if (
+              confirm(
+                "Are you sure you want to clear all your mood data? This cannot be undone."
+              )
+            ) {
+              moodData = [];
+              localStorage.setItem("moodData", JSON.stringify(moodData));
+              renderMoodHistory();
+              streak = 0;
+              localStorage.setItem("streak", streak);
+              document.getElementById("streak-count").textContent = streak;
+              document.getElementById("settings-modal").classList.add("hidden");
+            }
+          });
+
+        // --- Tab Switching ---
+        document.querySelectorAll(".tab-btn").forEach((btn) => {
+          btn.addEventListener("click", function () {
+            const tabId = this.getAttribute("data-tab");
+            document.querySelectorAll(".tab-btn").forEach((b) => {
+              b.classList.remove("text-blue-500", "border-blue-500");
+              b.classList.add("text-gray-500", "border-transparent");
+            });
+            this.classList.remove("text-gray-500", "border-transparent");
+            this.classList.add("text-blue-500", "border-blue-500");
+            document.querySelectorAll(".tab-content").forEach((content) => {
+              content.classList.remove("active");
+            });
+            document.getElementById(tabId).classList.add("active");
+            if (tabId === "stats") {
+              setTimeout(() => updateStats(), 100);
+            }
+          });
+        });
+
+        // --- Render Mood History ---
+        function renderMoodHistory(filterDate) {
+          const historyContainer = document.getElementById("mood-history");
+          historyContainer.innerHTML = "";
+          let filtered = moodData;
+          if (filterDate) {
+            filtered = moodData.filter(
+              (entry) => entry.date.split("T")[0] === filterDate
+            );
+          }
+          if (filtered.length === 0) {
+            historyContainer.innerHTML =
+              '<div class="text-gray-500 text-center py-4">No mood entries yet. Start tracking today!</div>';
+            updateStats();
+            return;
+          }
+          const sortedData = [...filtered].sort(
+            (a, b) => new Date(b.date) - new Date(a.date)
+          );
+          sortedData.forEach((entry, index) => {
+            const date = new Date(entry.date);
+            const today = new Date();
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            let dateDisplay;
+            if (date.toDateString() === today.toDateString()) {
+              dateDisplay = "Today";
+            } else if (date.toDateString() === yesterday.toDateString()) {
+              dateDisplay = "Yesterday";
+            } else {
+              dateDisplay = date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              });
+            }
+            let emoji;
+            switch (entry.mood) {
+              case "veryHappy":
+                emoji = "😁";
+                break;
+              case "happy":
+                emoji = "😊";
+                break;
+              case "neutral":
+                emoji = "😐";
+                break;
+              case "sad":
+                emoji = "😔";
+                break;
+              case "anxious":
+                emoji = "😨";
+                break;
+              case "stressed":
+                emoji = "😫";
+                break;
+              case "energetic":
+                emoji = "⚡";
+                break;
+              case "tired":
+                emoji = "😴";
+                break;
+              default:
+                emoji = "😊";
+            }
+            const item = document.createElement("div");
+            item.classList.add(
+              "history-item",
+              "p-3",
+              "rounded-lg",
+              "border",
+              "border-gray-200",
+              "animate__animated"
+            );
+            item.classList.add(index < 3 ? "animate__fadeInUp" : "");
+            item.style.animationDelay = `${index * 0.1}s`;
+            let factorsHtml = "";
+            if (entry.factors && entry.factors.length > 0) {
+              factorsHtml = `<div class="mt-2 flex flex-wrap gap-1">${entry.factors
+                .map(
+                  (f) =>
+                    `<span class='px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full'>${f}</span>`
+                )
+                .join("")}</div>`;
+            }
+            item.innerHTML = `
+                        <div class="flex items-start">
+                            <div class="text-2xl mr-3">${emoji}</div>
+                            <div class="flex-1">
+                                <div class="flex justify-between items-start">
+                                    <div class="font-medium text-gray-800">${getMoodName(
+                                      entry.mood
+                                    )}</div>
+                                    <div class="text-sm text-gray-500">${dateDisplay}</div>
+                            </div>
+                            ${
+                              entry.note
+                                ? `<div class="text-gray-600 mt-1">${entry.note}</div>`
+                                : ""
+                            }
+                            ${factorsHtml}
+                        </div>
+                    </div>
+                `;
+            historyContainer.appendChild(item);
+          });
+          updateStats();
+        }
+        function getMoodName(mood) {
+          const moodNames = {
+            veryHappy: "Very Happy",
+            happy: "Happy",
+            neutral: "Neutral",
+            sad: "Sad",
+            anxious: "Anxious",
+            stressed: "Stressed",
+            energetic: "Energetic",
+            tired: "Tired",
+          };
+          return moodNames[mood] || mood;
+        }
+        function getMoodValue(mood) {
+          const moodValues = {
+            veryHappy: 5,
+            happy: 4,
+            neutral: 3,
+            sad: 2,
+            anxious: 1,
+            stressed: 1.5,
+            energetic: 4.5,
+            tired: 2.5,
+          };
+          return moodValues[mood] || 3;
+        }
+        renderMoodHistory();
+
+        // --- Stats/Charts ---
+        function updateStats() {
+          if (moodData.length === 0) return;
+          // Summary stats
+          const moodValues = moodData.map((entry) => getMoodValue(entry.mood));
+          const avgMood =
+            moodValues.reduce((sum, val) => sum + val, 0) / moodValues.length;
+          const moodCounts = {};
+          moodData.forEach((entry) => {
+            moodCounts[entry.mood] = (moodCounts[entry.mood] || 0) + 1;
+          });
+          let topMood = Object.entries(moodCounts).sort(
+            (a, b) => b[1] - a[1]
+          )[0][0];
+          const recentMoods = moodData
+            .slice(-5)
+            .map((entry) => getMoodValue(entry.mood));
+          const moodTrend =
+            recentMoods.length > 1
+              ? recentMoods[recentMoods.length - 1] - recentMoods[0]
+              : 0;
+          document.getElementById("avg-mood").textContent = avgMood.toFixed(1);
+          document.getElementById("top-mood").textContent =
+            getMoodName(topMood);
+          document.getElementById("total-entries").textContent =
+            moodData.length;
+          if (moodTrend > 0.3) {
+            document.getElementById("mood-trend").textContent = "↗️ Up";
+          } else if (moodTrend < -0.3) {
+            document.getElementById("mood-trend").textContent = "↘️ Down";
+          } else {
+            document.getElementById("mood-trend").textContent = "→ Stable";
+          }
+          // Factor stats
+          const factorStats = document.getElementById("factor-stats");
+          factorStats.innerHTML = "";
+          const factorCounts = {};
+          moodData.forEach((entry) => {
+            if (entry.factors) {
+              entry.factors.forEach((factor) => {
+                factorCounts[factor] = (factorCounts[factor] || 0) + 1;
+              });
+            }
+          });
+          if (Object.keys(factorCounts).length === 0) {
+            factorStats.innerHTML =
+              '<div class="text-gray-500 text-sm italic">No factors recorded yet</div>';
+          } else {
+            const sortedFactors = Object.entries(factorCounts)
+              .sort((a, b) => b[1] - a[1])
+              .slice(0, 5);
+            sortedFactors.forEach(([factor, count]) => {
+              const percentage = Math.round((count / moodData.length) * 100);
+              const div = document.createElement("div");
+              div.classList.add("flex", "items-center");
+              div.innerHTML = `
+                        <div class="flex-1 text-gray-700">${factor}</div>
+                        <div class="w-32 bg-gray-200 rounded-full h-2.5">
+                            <div class="bg-blue-500 h-2.5 rounded-full" style="width: ${percentage}%"></div>
+                        </div>
+                        <div class="w-12 text-right text-gray-600 text-sm">${percentage}%</div>
+                    `;
+              factorStats.appendChild(div);
+            });
+          }
+          // --- Weekly Bar Chart ---
+          const weeklyData = getWeeklyData();
+          const weeklyCtx = document
+            .getElementById("weeklyChart")
+            .getContext("2d");
+          if (window.weeklyChart) window.weeklyChart.destroy();
+          window.weeklyChart = new Chart(weeklyCtx, {
+            type: "bar",
+            data: {
+              labels: weeklyData.labels,
+              datasets: [
+                {
+                  label: "Mood Level",
+                  data: weeklyData.data,
+                  backgroundColor: "rgba(59, 130, 246, 0.7)",
+                  borderRadius: 6,
+                  maxBarThickness: 32,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 5,
+                  ticks: {
+                    stepSize: 1,
+                    callback: function (value) {
+                      const labels = [
+                        "",
+                        "Very Low",
+                        "Low",
+                        "Neutral",
+                        "High",
+                        "Very High",
+                      ];
+                      return labels[value] || value;
+                    },
+                  },
+                },
+              },
+              plugins: { legend: { display: false } },
+            },
+          });
+          // --- Mood Distribution Pie Chart ---
+          const distributionCtx = document
+            .getElementById("moodDistribution")
+            .getContext("2d");
+          const moodLabels = Object.keys(moodCounts).map(getMoodName);
+          const moodDataArr = Object.values(moodCounts);
+          const backgroundColors = [
+            "rgba(255, 99, 132, 0.7)",
+            "rgba(54, 162, 235, 0.7)",
+            "rgba(255, 206, 86, 0.7)",
+            "rgba(75, 192, 192, 0.7)",
+            "rgba(153, 102, 255, 0.7)",
+            "rgba(255, 159, 64, 0.7)",
+            "rgba(199, 199, 199, 0.7)",
+            "rgba(83, 102, 255, 0.7)",
+          ];
+          if (window.distributionChart) window.distributionChart.destroy();
+          window.distributionChart = new Chart(distributionCtx, {
+            type: "pie",
+            data: {
+              labels: moodLabels,
+              datasets: [
+                {
+                  data: moodDataArr,
+                  backgroundColor: backgroundColors,
+                  borderWidth: 1,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: "right" } },
+            },
+          });
+          // --- Mood by Time of Day Bar Chart ---
+          const moodByTimeCtx = document
+            .getElementById("moodByTimeBar")
+            .getContext("2d");
+          const timeSlots = [
+            "Early Morning",
+            "Morning",
+            "Afternoon",
+            "Evening",
+            "Night",
+            "Midnight",
+          ];
+          const moodByTime = [0, 0, 0, 0, 0, 0];
+          const moodByTimeCounts = [0, 0, 0, 0, 0, 0];
+          // Calculate average mood for each time slot
+          moodData.forEach((entry) => {
+            const hour = new Date(entry.date).getHours();
+            let slot = 0;
+            if (hour >= 5 && hour < 8) slot = 0; // Early Morning
+            else if (hour >= 8 && hour < 12) slot = 1; // Morning
+            else if (hour >= 12 && hour < 16) slot = 2; // Afternoon
+            else if (hour >= 16 && hour < 20) slot = 3; // Evening
+            else if (hour >= 20 && hour < 24) slot = 4; // Night
+            else slot = 5; // Midnight
+            moodByTime[slot] += getMoodValue(entry.mood);
+            moodByTimeCounts[slot]++;
+          });
+          const moodByTimeAvg = moodByTime.map((sum, i) =>
+            moodByTimeCounts[i] ? sum / moodByTimeCounts[i] : null
+          );
+          if (window.moodByTimeBarChart) window.moodByTimeBarChart.destroy();
+          window.moodByTimeBarChart = new Chart(moodByTimeCtx, {
+            type: "bar",
+            data: {
+              labels: timeSlots,
+              datasets: [
+                {
+                  label: "Average Mood",
+                  data: moodByTimeAvg,
+                  backgroundColor: "rgba(255, 159, 64, 0.7)",
+                  borderRadius: 6,
+                  maxBarThickness: 32,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 5,
+                  ticks: {
+                    stepSize: 1,
+                    callback: function (value) {
+                      const labels = [
+                        "",
+                        "Very Low",
+                        "Low",
+                        "Neutral",
+                        "High",
+                        "Very High",
+                      ];
+                      return labels[value] || value;
+                    },
+                  },
+                },
+              },
+              plugins: { legend: { display: false } },
+            },
+          });
+        }
+        function getWeeklyData() {
+          const labels = [];
+          const data = [];
+          for (let i = 6; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            date.setHours(0, 0, 0, 0);
+            const dateStr = date.toISOString().split("T")[0];
+            labels.push(date.toLocaleDateString("en-US", { weekday: "short" }));
+            const dayMood = moodData.find(
+              (entry) => entry.date.split("T")[0] === dateStr
+            );
+            if (dayMood) {
+              data.push(getMoodValue(dayMood.mood));
+            } else {
+              data.push(null);
+            }
+          }
+          return { labels, data };
+        }
+        function getTimeOfDayData() {
+          const labels = [
+            "Midnight",
+            "Early Morning",
+            "Morning",
+            "Afternoon",
+            "Evening",
+            "Night",
+          ];
+          const data = new Array(labels.length).fill(0);
+          moodData.forEach((entry) => {
+            const hour = new Date(entry.date).getHours();
+            let index;
+            if (hour === 0) {
+              index = 0; // Midnight
+            } else if (hour < 6) {
+              index = 1; // Early Morning
+            } else if (hour < 12) {
+              index = 2; // Morning
+            } else if (hour < 18) {
+              index = 3; // Afternoon
+            } else if (hour < 21) {
+              index = 4; // Evening
+            } else {
+              index = 5; // Night
+            }
+            data[index] += getMoodValue(entry.mood);
+          });
+          return { labels, data };
+        }
+      });
+    </script>
+  </body>
+</html>

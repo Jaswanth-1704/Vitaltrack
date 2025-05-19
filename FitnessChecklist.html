@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fitness Checklist</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #6b7280, #1e3a8a);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-y: auto;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 2.2em;
+            margin-bottom: 20px;
+            color: #facc15;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .progress-container {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            width: 100%;
+            background: #374151;
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            width: 0;
+            height: 100%;
+            background: linear-gradient(90deg, #10b981, #34d399);
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            margin-top: 10px;
+            font-size: 1.1em;
+            color: #d1d5db;
+        }
+
+        .checklist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .checklist li {
+            display: flex;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.15);
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 10px;
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+
+        .checklist li:hover {
+            transform: scale(1.02);
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .checklist input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #facc15;
+            border-radius: 5px;
+            cursor: pointer;
+            position: relative;
+            margin-right: 10px;
+        }
+
+        .checklist input[type="checkbox"]:checked {
+            background: #facc15;
+        }
+
+        .checklist input[type="checkbox"]:checked::after {
+            content: '\f00c';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            color: #1e3a8a;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 12px;
+        }
+
+        .checklist label {
+            flex: 1;
+            font-size: 1.1em;
+            color: #e5e7eb;
+            cursor: pointer;
+        }
+
+        .checklist i {
+            margin-right: 10px;
+            color: #facc15;
+            font-size: 1.3em;
+        }
+
+        .add-task {
+            display: flex;
+            margin-top: 20px;
+        }
+
+        .add-task input {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px 0 0 5px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        .add-task button {
+            padding: 10px 20px;
+            border: none;
+            background: #facc15;
+            color: #1e3a8a;
+            font-weight: bold;
+            border-radius: 0 5px 5px 0;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .add-task button:hover {
+            background: #eab308;
+        }
+
+        @media (max-width: 400px) {
+            h1 {
+                font-size: 1.8em;
+            }
+
+            .checklist label {
+                font-size: 1em;
+            }
+
+            .container {
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fitness Checklist</h1>
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-text" id="progressText">Progress: 0%</div>
+        </div>
+        <ul class="checklist" id="checklist">
+            <li>
+                <input type="checkbox" id="task1">
+                <i class="fas fa-running"></i>
+                <label for="task1">Run 5km</label>
+            </li>
+            <li>
+                <input type="checkbox" id="task2">
+                <i class="fas fa-dumbbell"></i>
+                <label for="task2">Strength Training (30 mins)</label>
+            </li>
+            <li>
+                <input type="checkbox" id="task3">
+                <i class="fas fa-apple-alt"></i>
+                <label for="task3">Eat 3 Healthy Meals</label>
+            </li>
+            <li>
+                <input type="checkbox" id="task4">
+                <i class="fas fa-water"></i>
+                <label for="task4">Drink 2L Water</label>
+            </li>
+            <li>
+                <input type="checkbox" id="task5">
+                <i class="fas fa-bed"></i>
+                <label for="task5">Sleep 7-8 Hours</label>
+            </li>
+        </ul>
+        <div class="add-task">
+            <input type="text" id="newTask" placeholder="Add new fitness task...">
+            <button onclick="addTask()">Add</button>
+        </div>
+    </div>
+    <script>
+        const checklist = document.getElementById('checklist');
+        const progressFill = document.getElementById('progressFill');
+        const progressText = document.getElementById('progressText');
+        const newTaskInput = document.getElementById('newTask');
+
+        function updateProgress() {
+            const checkboxes = checklist.querySelectorAll('input[type="checkbox"]');
+            const checked = Array.from(checkboxes).filter(cb => cb.checked).length;
+            const total = checkboxes.length;
+            const percentage = total ? (checked / total) * 100 : 0;
+            progressFill.style.width = `${percentage}%`;
+            progressText.textContent = `Progress: ${Math.round(percentage)}%`;
+        }
+
+        function addTask() {
+            const taskText = newTaskInput.value.trim();
+            if (!taskText) return;
+
+            const li = document.createElement('li');
+            const taskId = `task${Date.now()}`;
+            li.innerHTML = `
+                <input type="checkbox" id="${taskId}">
+                <i class="fas fa-star"></i>
+                <label for="${taskId}">${taskText}</label>
+            `;
+            checklist.appendChild(li);
+            newTaskInput.value = '';
+
+            li.querySelector('input').addEventListener('change', updateProgress);
+            updateProgress();
+        }
+
+        checklist.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', updateProgress);
+        });
+
+        newTaskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addTask();
+        });
+
+        updateProgress();
+    </script>
+</body>
+</html>

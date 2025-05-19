@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breathing Exercises</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #83a4d4, #b6fbff);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        .breathing-circle {
+            width: 200px;
+            height: 200px;
+            background: #ffffff;
+            border-radius: 50%;
+            margin: 20px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            transition: all 1s ease-in-out;
+        }
+
+        .circle-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .timer {
+            font-size: 48px;
+            margin: 20px 0;
+            color: #2c3e50;
+        }
+
+        .controls {
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 12px 24px;
+            margin: 0 10px;
+            border: none;
+            border-radius: 25px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 10px;
+            max-width: 500px;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .breathing-animation {
+            animation: pulse 4s ease-in-out infinite;
+        }
+
+        .phase-indicator {
+            margin-top: 20px;
+            font-size: 24px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Deep Breathing Exercise</h1>
+        <div class="timer" id="timer">00:00</div>
+        <div class="breathing-circle" id="breathingCircle">
+            <div class="circle-text" id="circleText">Ready</div>
+        </div>
+        <div class="phase-indicator" id="phaseIndicator">Click Start to Begin</div>
+        
+        <div class="controls">
+            <button onclick="startExercise()" id="startBtn">Start</button>
+            <button onclick="pauseExercise()" id="pauseBtn" disabled>Pause</button>
+            <button onclick="resetExercise()">Reset</button>
+        </div>
+
+        <div class="instructions">
+            <h2>Instructions</h2>
+            <p>1. Click Start to begin the exercise</p>
+            <p>2. Inhale deeply through your nose for 4 seconds</p>
+            <p>3. Hold your breath for 4 seconds</p>
+            <p>4. Exhale slowly through your mouth for 6 seconds</p>
+            <p>5. Repeat for 5 cycles</p>
+        </div>
+
+        <div class="cycle-counter" style="margin-top: 20px;">
+            Completed Cycles: <span id="cycleCount">0</span>
+        </div>
+    </div>
+
+    <script>
+        let timer;
+        let isRunning = false;
+        let timeLeft = 14; // Total seconds per cycle
+        let currentPhase = 0;
+        let cycleCount = 0;
+        const phases = [
+            { duration: 4, message: "Inhale", color: "#4CAF50" },
+            { duration: 4, message: "Hold", color: "#FFC107" },
+            { duration: 6, message: "Exhale", color: "#2196F3" }
+        ];
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timer').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        function updateCircle() {
+            const circle = document.getElementById('breathingCircle');
+            const text = document.getElementById('circleText');
+            const phase = phases[currentPhase];
+            
+            circle.style.backgroundColor = phase.color;
+            text.textContent = phase.message;
+            document.getElementById('phaseIndicator').textContent = phase.message;
+            
+            // Add breathing animation
+            circle.style.transform = `scale(${phase.message === 'Exhale' ? 0.9 : 1.1})`;
+            circle.style.transition = 'all 1s ease-in-out';
+        }
+
+        function startExercise() {
+            if (!isRunning) {
+                isRunning = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('pauseBtn').disabled = false;
+                runPhase();
+            }
+        }
+
+        function runPhase() {
+            if (!isRunning) return;
+            
+            const phase = phases[currentPhase];
+            timeLeft = phase.duration;
+            updateTimerDisplay();
+            updateCircle();
+
+            timer = setInterval(() => {
+                timeLeft--;
+                updateTimerDisplay();
+
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    currentPhase = (currentPhase + 1) % phases.length;
+                    
+                    if (currentPhase === 0) {
+                        cycleCount++;
+                        document.getElementById('cycleCount').textContent = cycleCount;
+                    }
+                    
+                    if (cycleCount < 5) {
+                        runPhase();
+                    } else {
+                        resetExercise();
+                    }
+                }
+            }, 1000);
+        }
+
+        function pauseExercise() {
+            isRunning = false;
+            clearInterval(timer);
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+        }
+
+        function resetExercise() {
+            clearInterval(timer);
+            isRunning = false;
+            currentPhase = 0;
+            timeLeft = 14;
+            cycleCount = 0;
+            document.getElementById('cycleCount').textContent = '0';
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('breathingCircle').style.backgroundColor = '#ffffff';
+            document.getElementById('circleText').textContent = 'Ready';
+            document.getElementById('phaseIndicator').textContent = 'Click Start to Begin';
+            updateTimerDisplay();
+        }
+    </script>
+</body>
+</html>

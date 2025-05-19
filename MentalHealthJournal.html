@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mental Health Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #e0eafc, #cfdef3);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            animation: fadeIn 1s ease-in;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #34495e;
+            font-size: 1.2em;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .card i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+
+        .mood-tracker .mood-buttons {
+            display: flex;
+            justify-content: space-around;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .mood-btn {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+            font-size: 1em;
+        }
+
+        .mood-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+
+        .mood-btn:active {
+            transform: scale(0.95);
+        }
+
+        .journal textarea {
+            width: 100%;
+            min-height: 150px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            padding: 10px;
+            resize: vertical;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+
+        .journal textarea:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .journal button {
+            margin-top: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .journal button:hover {
+            background: #2980b9;
+        }
+
+        .stress-slider input {
+            width: 100%;
+            margin: 10px 0;
+            accent-color: #3498db;
+        }
+
+        .stress-level {
+            font-size: 1.2em;
+            color: #2c3e50;
+            margin-top: 10px;
+        }
+
+        .quotes {
+            text-align: center;
+            font-style: italic;
+            color: #34495e;
+            font-size: 1.2em;
+            animation: fadeIn 1s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2em;
+            }
+
+            .card {
+                padding: 15px;
+            }
+
+            .mood-btn {
+                padding: 8px 15px;
+                font-size: 0.9em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class="fas fa-heart"></i> Mental Health Dashboard</h1>
+            <p>Track your mood, journal your thoughts, and manage stress.</p>
+        </div>
+
+        <div class="card mood-tracker">
+            <h2><i class="fas fa-smile"></i> Mood Tracker</h2>
+            <div class="mood-buttons">
+                <button class="mood-btn" onclick="trackMood('Happy')">😊 Happy</button>
+                <button class="mood-btn" onclick="trackMood('Sad')">😢 Sad</button>
+                <button class="mood-btn" onclick="trackMood('Calm')">😌 Calm</button>
+                <button class="mood-btn" onclick="trackMood('Anxious')">😟 Anxious</button>
+                <button class="mood-btn" onclick="trackMood('Excited')">🎉 Excited</button>
+            </div>
+            <p id="mood-result" style="margin-top: 15px; color: #2c3e50;"></p>
+        </div>
+
+        <div class="card journal">
+            <h2><i class="fas fa-book"></i> Daily Journal</h2>
+            <textarea id="journal-entry" placeholder="Write your thoughts here..."></textarea>
+            <button onclick="saveJournal()">Save Entry</button>
+            <p id="journal-result" style="margin-top: 15px; color: #2c3e50;"></p>
+        </div>
+
+        <div class="card stress-slider">
+            <h2><i class="fas fa-tachometer-alt"></i> Stress Level</h2>
+            <input type="range" min="0" max="10" value="0" id="stress-slider" oninput="updateStress()">
+            <p class="stress-level" id="stress-level">Stress Level: 0</p>
+        </div>
+
+        <div class="card quotes">
+            <h2><i class="fas fa-quote-left"></i> Motivational Quote</h2>
+            <p id="quote">You are enough just as you are.</p>
+            <button onclick="newQuote()" class="mood-btn" style="margin-top: 15px;">New Quote</button>
+        </div>
+    </div>
+
+    <script>
+        function trackMood(mood) {
+            const result = document.getElementById('mood-result');
+            result.textContent = `You are feeling ${mood}! We'll keep track of this for you.`;
+            result.style.opacity = '0';
+            setTimeout(() => {
+                result.style.transition = 'opacity 0.5s';
+                result.style.opacity = '1';
+            }, 100);
+        }
+
+        function saveJournal() {
+            const entry = document.getElementById('journal-entry').value;
+            const result = document.getElementById('journal-result');
+            if (entry.trim()) {
+                result.textContent = 'Journal entry saved successfully!';
+                document.getElementById('journal-entry').value = '';
+            } else {
+                result.textContent = 'Please write something before saving.';
+            }
+            result.style.opacity = '0';
+            setTimeout(() => {
+                result.style.transition = 'opacity 0.5s';
+                result.style.opacity = '1';
+            }, 100);
+        }
+
+        function updateStress() {
+            const slider = document.getElementById('stress-slider');
+            const level = document.getElementById('stress-level');
+            level.textContent = `Stress Level: ${slider.value}`;
+            level.style.color = slider.value > 7 ? '#e74c3c' : slider.value > 3 ? '#f1c40f' : '#2ecc71';
+        }
+
+        const quotes = [
+            "You are enough just as you are.",
+            "Every day is a new beginning.",
+            "Your mental health is a priority.",
+            "You are stronger than you know.",
+            "Take it one step at a time."
+        ];
+
+        function newQuote() {
+            const quoteElement = document.getElementById('quote');
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            quoteElement.textContent = randomQuote;
+            quoteElement.style.opacity = '0';
+            setTimeout(() => {
+                quoteElement.style.transition = 'opacity 0.5s';
+                quoteElement.style.opacity = '1';
+            }, 100);
+        }
+    </script>
+</body>
+</html>
